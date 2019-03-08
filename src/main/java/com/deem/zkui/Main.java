@@ -82,10 +82,15 @@ public class Main {
         HandlerList handlers = new HandlerList();
         handlers.setHandlers(new Handler[]{staticResourceHandler, servletContextHandler});
 
+        String serverHost = "0.0.0.0";
+        int serverPort = Integer.parseInt(globalProps.getProperty("serverPort"));
+        if (!globalProps.getProperty("serverPort").isEmpty()){
+            serverHost = globalProps.getProperty("serverHost");
+        }
         server.setHandler(handlers);
         HttpConfiguration http_config = new HttpConfiguration();
         http_config.setSecureScheme("https");
-        http_config.setSecurePort(Integer.parseInt(globalProps.getProperty("serverPort")));
+        http_config.setSecurePort(serverPort);
         
         if (globalProps.getProperty("https").equals("true")) {
             File keystoreFile = new File(globalProps.getProperty("keystoreFile"));
@@ -97,14 +102,16 @@ public class Main {
             https_config.addCustomizer(new SecureRequestCustomizer());
 
             ServerConnector https = new ServerConnector(server, new SslConnectionFactory(sslContextFactory, HttpVersion.HTTP_1_1.asString()), new HttpConnectionFactory(https_config));
-            https.setPort(Integer.parseInt(globalProps.getProperty("serverPort")));
+            https.setPort(serverPort);
+            https.setHost(serverHost);
             server.setConnectors(new Connector[]{https});
         } else {
-            if(globalProps.getProperty("X-Forwarded-For").equals("true")) {
+            if (globalProps.getProperty("X-Forwarded-For").equals("true")) {
                 http_config.addCustomizer(new org.eclipse.jetty.server.ForwardedRequestCustomizer());
             }
             ServerConnector http = new ServerConnector(server, new HttpConnectionFactory(http_config));
-            http.setPort(Integer.parseInt(globalProps.getProperty("serverPort")));
+            http.setPort(serverPort);
+            http.setHost(serverHost);
             server.setConnectors(new Connector[]{http});
         }
 
